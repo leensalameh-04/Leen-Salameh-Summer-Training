@@ -1,49 +1,21 @@
-package com.example.taskmanagement.model;
+package com.example.taskmanagement.dto;
 
-import jakarta.persistence.*;
+import com.example.taskmanagement.model.TaskPriority;
+import com.example.taskmanagement.model.TaskStatus;
+
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "tasks")
-public class Task {
+public class TaskResponseDTO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
     private String title;
-
     private String description;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private TaskStatus status;
-
-    @Enumerated(EnumType.STRING)
     private TaskPriority priority;
-
-    @Column(name = "due_date")
     private LocalDate dueDate;
+    private Long projectId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id")
-    private Project project;
-
-    public Task() {
-    }
-
-    public Task(Long id, String title, String description,
-                TaskStatus status,
-                TaskPriority priority,
-                LocalDate dueDate) {
-
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.status = status;
-        this.priority = priority;
-        this.dueDate = dueDate;
+    public TaskResponseDTO() {
     }
 
     public Long getId() {
@@ -94,11 +66,11 @@ public class Task {
         this.dueDate = dueDate;
     }
 
-    public Project getProject() {
-        return project;
+    public Long getProjectId() {
+        return projectId;
     }
 
-    public void setProject(Project project) {
-        this.project = project;
+    public void setProjectId(Long projectId) {
+        this.projectId = projectId;
     }
 }
