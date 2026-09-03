@@ -3,12 +3,16 @@ package com.example.taskmanagement.service;
 import com.example.taskmanagement.model.Task;
 import com.example.taskmanagement.model.TaskPriority;
 import com.example.taskmanagement.model.TaskStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 public interface TaskService {
 
     List<Task> getAllTasks();
+
+    Page<Task> getTasks(TaskStatus status, TaskPriority priority, Long projectId, Boolean overdue, Pageable pageable);
 
     Task getTaskById(Long id);
 

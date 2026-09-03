@@ -7,7 +7,11 @@ import com.example.taskmanagement.model.Task;
 import com.example.taskmanagement.model.TaskPriority;
 import com.example.taskmanagement.model.TaskStatus;
 import com.example.taskmanagement.service.TaskService;
-
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,10 +28,10 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    // POST /api/tasks
+    // POST /api/tasks (201 CREATED)
     @PostMapping
     public ResponseEntity<TaskResponseDTO> createTask(
-            @RequestBody TaskRequestDTO requestDTO) {
+            @Valid @RequestBody TaskRequestDTO requestDTO) {
 
         Task task = TaskMapper.toEntity(requestDTO);
         Task savedTask = taskService.createTask(task, requestDTO.getProjectId());
@@ -38,45 +42,47 @@ public class TaskController {
         );
     }
 
-    // GET /api/tasks
+    // GET /api/tasks with Filtering, Pagination & Sorting (200 OK)
     @GetMapping
-    public List<TaskResponseDTO> getAllTasks() {
-        return taskService.getAllTasks()
-                .stream()
-                .map(TaskMapper::toResponse)
-                .toList();
+    public Page<TaskResponseDTO> getTasks(
+            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) TaskPriority priority,
+            @RequestParam(required = false) Long projectId,
+            @RequestParam(required = false) Boolean overdue,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        return taskService.getTasks(status, priority, projectId, overdue, pageable)
+                .map(TaskMapper::toResponse);
     }
 
-    // GET /api/tasks/{id}
+    // GET /api/tasks/{id} (200 OK)
     @GetMapping("/{id}")
     public ResponseEntity<TaskResponseDTO> getTaskById(
             @PathVariable Long id) {
 
         Task task = taskService.getTaskById(id);
-        if (task == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok(
-                TaskMapper.toResponse(task)
-        );
+        return ResponseEntity.ok(TaskMapper.toResponse(task));
     }
 
-    // PUT /api/tasks/{id}
+    // PUT /api/tasks/{id} (200 OK)
     @PutMapping("/{id}")
     public ResponseEntity<TaskResponseDTO> updateTask(
             @PathVariable Long id,
-            @RequestBody TaskRequestDTO requestDTO) {
+            @Valid @RequestBody TaskRequestDTO requestDTO) {
 
         Task task = TaskMapper.toEntity(requestDTO);
         Task updatedTask = taskService.updateTask(id, task, requestDTO.getProjectId());
 
-        return ResponseEntity.ok(
-                TaskMapper.toResponse(updatedTask)
-        );
+        return ResponseEntity.ok(TaskMapper.toResponse(updatedTask));
     }
 
-    // PATCH /api/tasks/{id}/status
+    // PATCH /api/tasks/{id}/status (200 OK)
     @PatchMapping("/{id}/status")
     public ResponseEntity<TaskResponseDTO> updateStatus(
             @PathVariable Long id,
@@ -84,12 +90,10 @@ public class TaskController {
 
         Task updatedTask = taskService.updateStatus(id, status);
 
-        return ResponseEntity.ok(
-                TaskMapper.toResponse(updatedTask)
-        );
+        return ResponseEntity.ok(TaskMapper.toResponse(updatedTask));
     }
 
-    // GET /api/tasks/status/{status}
+    // GET /api/tasks/status/{status} (200 OK)
     @GetMapping("/status/{status}")
     public List<TaskResponseDTO> getTasksByStatus(
             @PathVariable TaskStatus status) {
@@ -100,7 +104,7 @@ public class TaskController {
                 .toList();
     }
 
-    // GET /api/tasks/priority/{priority}
+    // GET /api/tasks/priority/{priority} (200 OK)
     @GetMapping("/priority/{priority}")
     public List<TaskResponseDTO> getTasksByPriority(
             @PathVariable TaskPriority priority) {
@@ -111,7 +115,7 @@ public class TaskController {
                 .toList();
     }
 
-    // GET /api/tasks/overdue
+    // GET /api/tasks/overdue (200 OK)
     @GetMapping("/overdue")
     public List<TaskResponseDTO> getOverdueTasks() {
         return taskService.getOverdueTasks()
@@ -120,7 +124,7 @@ public class TaskController {
                 .toList();
     }
 
-    // DELETE /api/tasks/{id}
+    // DELETE /api/tasks/{id} (204 NO CONTENT)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(
             @PathVariable Long id) {
